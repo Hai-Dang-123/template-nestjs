@@ -1,6 +1,6 @@
 
 
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -8,6 +8,7 @@ import * as bcrypt from 'bcrypt';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { TokenDto } from './dto/token.dto';
+import { UserRole } from '../../common/enums/user-role.enum';
 
 @Injectable()
 export class AuthService {
@@ -22,15 +23,11 @@ export class AuthService {
     if (existingUser) {
       throw new ConflictException('Email already exists');
     }
-
-    // FIX: Pass the DTO directly. The user service now handles mapping password to passwordHash.
-    // This resolves the error where 'passwordHash' was passed instead of 'password'.
+    // The create method in user service will now handle assigning the default USER role.
     await this.userService.create(registerUserDto);
   }
 
   async login(loginUserDto: LoginUserDto): Promise<TokenDto> {
-    // FIX: The errors regarding 'email' and 'password' not existing on LoginUserDto
-    // are resolved by fixing the LoginUserDto definition to use PickType from '@nestjs/mapped-types'.
     const user = await this.userService.findOneByEmail(loginUserDto.email);
 
     if (!user) {
@@ -46,7 +43,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const tokens = await this.getTokens(user.userId, user.email);
+    const tokens = await this.getTokens(user.userId, user.email, user.role.name as UserRole);
     await this.updateRefreshTokenHash(user.userId, tokens.refreshToken);
     return tokens;
   }
@@ -66,7 +63,7 @@ export class AuthService {
       throw new UnauthorizedException('Access Denied');
     }
 
-    const tokens = await this.getTokens(user.userId, user.email);
+    const tokens = await this.getTokens(user.userId, user.email, user.role.name as UserRole);
     await this.updateRefreshTokenHash(user.userId, tokens.refreshToken);
     return tokens;
   }
@@ -76,10 +73,10 @@ export class AuthService {
     await this.userService.setCurrentRefreshToken(hashedRefreshToken, userId);
   }
 
-  private async getTokens(userId: string, email: string): Promise<TokenDto> {
+  private async getTokens(userId: string, email: string, role: UserRole): Promise<TokenDto> {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(
-        { userId, email },
+        { userId, email, role },
         {
           secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
           expiresIn: this.configService.get<string>('JWT_ACCESS_EXPIRATION'),

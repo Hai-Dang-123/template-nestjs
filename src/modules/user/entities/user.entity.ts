@@ -7,10 +7,12 @@ import {
   UpdateDateColumn,
   BeforeInsert,
   DeleteDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
-import { UserRole } from '../../../common/enums/user-role.enum';
 import { UserStatus } from '../../../common/enums/user-status.enum';
 import * as bcrypt from 'bcrypt';
+import { Role } from '../../role/entities/role.entity';
 
 @Entity('users')
 export class User {
@@ -29,12 +31,9 @@ export class User {
   @Column({ select: false })
   passwordHash: string;
 
-  @Column({
-    type: 'nvarchar',
-    enum: UserRole,
-    default: UserRole.USER,
-  })
-  role: UserRole;
+  @ManyToOne(() => Role, (role) => role.users, { eager: true }) // eager: true to always load the role
+  @JoinColumn({ name: 'roleId' })
+  role: Role;
 
   @Column({
     type: 'nvarchar',

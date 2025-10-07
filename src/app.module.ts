@@ -6,6 +6,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { databaseConfig } from './config/database.config';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { RoleModule } from './modules/role/role.module';
+import { SeederModule } from './database/seeder/seeder.module';
 
 @Module({
   imports: [
@@ -14,12 +16,13 @@ import { AuthModule } from './modules/auth/auth.module';
       envFilePath: '.env',
     }),
     TypeOrmModule.forRootAsync({
-      // FIX: Add ConfigModule to imports array as it's a dependency for database config.
       imports: [ConfigModule],
       useFactory: () => databaseConfig,
     }),
     UserModule,
     AuthModule,
+    RoleModule,
+    SeederModule,
   ],
   controllers: [],
   providers: [],
