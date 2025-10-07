@@ -1,0 +1,5 @@
+{
+  "name": "NestJS Clean Architecture Backend",
+  "description": "A comprehensive NestJS backend project featuring a clean architecture, JWT authentication (access + refresh tokens), TypeORM with SQL Server, code-first migrations, and Swagger API documentation.",
+  "requestFramePermissions": []
+}
